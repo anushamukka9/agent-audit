@@ -1,17 +1,28 @@
 """Packaging sanity: version agreement and entry points."""
 
+import re
+import sys
 from pathlib import Path
 
-import tomllib
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # tomllib only exists from Python 3.11 onward
+    tomllib = None
 
 import agent_audit
 
 
+def _pyproject_version():
+    text = (Path(__file__).resolve().parent.parent / "pyproject.toml").read_text()
+    if tomllib is not None:
+        return tomllib.loads(text)["project"]["version"]
+    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    assert match, "version not found in pyproject.toml"
+    return match.group(1)
+
+
 def test_version_matches_pyproject():
-    pyproject = tomllib.loads(
-        (Path(__file__).resolve().parent.parent / "pyproject.toml").read_text()
-    )
-    assert agent_audit.__version__ == pyproject["project"]["version"]
+    assert agent_audit.__version__ == _pyproject_version()
 
 
 def test_public_api_is_exported():
