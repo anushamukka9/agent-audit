@@ -1,0 +1,279 @@
+{
+  "uid": "agent-audit-activity",
+  "title": "Agent activity (agent-audit)",
+  "description": "What my agents did, what policy allowed, and what a human approved. Built for the Elastic ECS export from agent-audit; see docs/siem-export.md.",
+  "tags": [
+    "agent-audit",
+    "ai-agents",
+    "audit"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Elasticsearch data source",
+        "type": "datasource",
+        "pluginId": "elasticsearch",
+        "current": {},
+        "hide": 0,
+        "query": "elasticsearch",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "agent_id",
+        "label": "Agent",
+        "type": "query",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${datasource}"
+        },
+        "query": {
+          "query": "agent_audit.agent_id",
+          "type": "lucene"
+        },
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "multi": true,
+        "hide": 0,
+        "refresh": 2,
+        "skipUrlSync": false
+      },
+      {
+        "name": "run_id",
+        "label": "Run",
+        "type": "query",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${datasource}"
+        },
+        "query": {
+          "query": "agent_audit.run_id",
+          "type": "lucene"
+        },
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "multi": true,
+        "hide": 0,
+        "refresh": 2,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Events over time",
+      "type": "timeseries",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "agent_audit.agent_id:$agent_id AND agent_audit.run_id:$run_id",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Denied actions",
+      "type": "stat",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "agent_audit.policy_decision:deny",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Pending approvals",
+      "type": "stat",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "agent_audit.human_approval:pending",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Decisions (allow vs deny)",
+      "type": "piechart",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "*",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Top agents by events",
+      "type": "barchart",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "*",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Top actions",
+      "type": "barchart",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "*",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Denied and approved events (detail)",
+      "type": "table",
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "agent_audit.policy_decision:deny OR agent_audit.human_approval:approved",
+          "metrics": [
+            {
+              "type": "count",
+              "id": "1"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

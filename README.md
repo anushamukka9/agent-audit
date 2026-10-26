@@ -92,7 +92,9 @@ agent-audit verify audit.jsonl                      # re-hash the chain
 agent-audit verify audit.jsonl --pin-out head.pin   # pin the head hash
 agent-audit verify audit.jsonl --pin head.pin       # verify against the pin
 agent-audit export audit.jsonl -o out.csv --format csv
+agent-audit export audit.jsonl -o splunk.jsonl --format splunk
 agent-audit query audit.jsonl --decision deny       # JSONL of denied actions
+agent-audit dashboard -o agent-activity.json        # Grafana dashboard JSON
 ```
 
 ## Python API
@@ -118,6 +120,27 @@ result = store.verify_with_pin("/secure/vault/run-123.pin")
 How verification works and why the pin matters:
 [docs/verification.md](docs/verification.md).
 
+## SIEM export
+
+A JSONL file on my disk does not help a security team that lives in
+Splunk, Elastic, or Datadog, so the exporter speaks their languages:
+
+```bash
+agent-audit export audit.jsonl -o splunk.jsonl --format splunk     # HEC envelopes
+agent-audit export audit.jsonl -o bulk.ndjson --format elastic     # ECS, _bulk NDJSON
+agent-audit export audit.jsonl -o datadog.jsonl --format datadog   # log records
+agent-audit dashboard -o agent-activity.json                       # Grafana dashboard
+```
+
+Every format carries the full original event, hashes included, so an
+alert in the SIEM can be traced back to a line in the chain and
+re-verified there. The Grafana dashboard (also shipped at
+`dashboards/agent-activity.json`) panels events over time, denials,
+pending approvals, and the busiest agents and actions against the
+Elastic export. Field mappings, ingest commands, and the honest
+limits (export, not a shipper; the SIEM copy is only as trustworthy
+as the SIEM): [docs/siem-export.md](docs/siem-export.md).
+
 ## Benchmarks
 
 Measured on this machine (see [benchmarks/results.md](benchmarks/results.md)
@@ -131,6 +154,9 @@ is the default durability setting.
 | Full-chain verification (10,000 events) | 31,875 events/sec |
 | Average bytes per event | 480 |
 | CSV export (50,000 events) | 1.15 s |
+| SIEM export, Splunk (10,000 events, in-memory) | 45,720 events/sec |
+| SIEM export, Elastic ECS (10,000 events, in-memory) | 32,217 events/sec |
+| SIEM export, Datadog (10,000 events, in-memory) | 45,708 events/sec |
 
 ## Honest limitations
 

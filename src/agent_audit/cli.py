@@ -1,4 +1,4 @@
-"""Command line interface: init, log, verify, export, query."""
+"""Command line interface: init, log, verify, export, query, dashboard."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 from . import __version__
 from .export import export_events
 from .query import filter_events
+from .siem import SIEM_FORMATS, write_grafana_dashboard
 from .store import AuditStore
 
 
@@ -86,6 +87,12 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_dashboard(args: argparse.Namespace) -> int:
+    dest = write_grafana_dashboard(args.output)
+    print(f"wrote Grafana dashboard to {dest}")
+    return 0
+
+
 def cmd_query(args: argparse.Namespace) -> int:
     events = filter_events(
         args.path,
@@ -135,11 +142,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument("--pin-out", default=None, help="write current head hash to a pin file")
     p_verify.set_defaults(func=cmd_verify)
 
-    p_export = sub.add_parser("export", help="export the store to JSONL or CSV")
+    p_export = sub.add_parser("export", help="export the store to JSONL, CSV, or a SIEM format")
     p_export.add_argument("path", help="path to the JSONL store file")
     p_export.add_argument("-o", "--output", required=True)
-    p_export.add_argument("--format", default="jsonl", choices=["jsonl", "csv"])
+    p_export.add_argument("--format", default="jsonl", choices=["jsonl", "csv", *SIEM_FORMATS])
     p_export.set_defaults(func=cmd_export)
+
+    p_dash = sub.add_parser("dashboard", help="write the Grafana dashboard JSON for agent activity")
+    p_dash.add_argument("-o", "--output", required=True)
+    p_dash.set_defaults(func=cmd_dashboard)
 
     p_query = sub.add_parser("query", help="print events matching filters as JSONL")
     p_query.add_argument("path", help="path to the JSONL store file")
