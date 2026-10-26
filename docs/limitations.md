@@ -39,3 +39,10 @@ filesystem. Treat diffs as the agent's claim about what changed.
 **JSONL is not encrypted.** Anyone who can read the store file can read
 every parameter you logged. If the log holds sensitive data, encrypt
 the file at rest yourself.
+
+**SIEM copies are not chain-verified.** Exporting to Splunk, Elastic,
+or Datadog (see [siem-export](siem-export.md)) copies events into a
+system this library does not control. The hashes ride along so any
+event can be checked against the store file, but nothing re-verifies
+the SIEM copy, and a re-export can create duplicates in Splunk and
+Datadog. The store file stays the record; the SIEM is a viewing copy.

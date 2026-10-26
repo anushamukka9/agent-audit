@@ -29,22 +29,44 @@ from .models import (
     utc_now_iso,
 )
 from .query import filter_events, iter_events
+from .siem import (
+    SIEM_FORMATS,
+    build_grafana_dashboard,
+    export_datadog,
+    export_elastic,
+    export_siem,
+    export_splunk,
+    to_datadog_event,
+    to_ecs_event,
+    to_splunk_event,
+    write_grafana_dashboard,
+)
 from .store import AuditStore, VerificationProblem, VerificationResult
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "GENESIS_PREV_HASH",
     "CSV_COLUMNS",
+    "SIEM_FORMATS",
     "AuditStore",
     "Event",
     "VerificationProblem",
     "VerificationResult",
+    "build_grafana_dashboard",
     "export_csv",
+    "export_datadog",
+    "export_elastic",
     "export_events",
     "export_jsonl",
+    "export_siem",
+    "export_splunk",
     "filter_events",
     "iter_events",
     "sanitize_parameters",
+    "to_datadog_event",
+    "to_ecs_event",
+    "to_splunk_event",
     "utc_now_iso",
+    "write_grafana_dashboard",
 ]
