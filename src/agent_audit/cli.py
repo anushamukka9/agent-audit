@@ -12,6 +12,7 @@ from .export import export_events
 from .query import filter_events
 from .siem import SIEM_FORMATS, write_grafana_dashboard
 from .store import AuditStore
+from .verify import verify_file
 
 
 def _json_params(text: str | None) -> dict:
@@ -67,6 +68,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
         head = store.pin_head(args.pin_out)
         print(f"pinned head hash to {args.pin_out}: {head}")
         return 0
+    if args.format == "json" or args.strict or args.verbose:
+        return _cmd_verify_standalone(args)
     if args.pin:
         result = store.verify_with_pin(args.pin)
     else:
@@ -79,6 +82,39 @@ def cmd_verify(args: argparse.Namespace) -> int:
     for problem in result.problems:
         print(f"  line {problem.index}: [{problem.reason}] {problem.detail}")
     return 0 if result.valid else 1
+
+
+def _cmd_verify_standalone(args: argparse.Namespace) -> int:
+    ok_lines: list[str] = []
+
+    def on_event(index: int, event: object) -> None:
+        ok_lines.append(f"ok line {index} seq {event.seq} {event.event_hash[:12]} {event.action}")
+
+    report = verify_file(
+        args.path,
+        fail_fast=args.strict,
+        pin_path=args.pin,
+        on_event=on_event if args.verbose else None,
+    )
+    if args.format == "json":
+        print(json.dumps(report.to_dict(), indent=2))
+        return 0 if report.valid else 1
+    for line in ok_lines:
+        print(line)
+    print(f"events: {report.event_count}")
+    print(f"valid: {report.valid}")
+    print(f"detail: {report.detail}")
+    if report.head_hash:
+        print(f"head: {report.head_hash}")
+    for problem in report.problems:
+        print(f"  line {problem.index}: [{problem.reason}] {problem.detail}")
+    if args.strict and not report.valid and report.first_failure is not None:
+        first = report.first_failure
+        print(
+            f"FAIL: line {first.index}: [{first.reason}] {first.detail}",
+            file=sys.stderr,
+        )
+    return 0 if report.valid else 1
 
 
 def cmd_export(args: argparse.Namespace) -> int:
@@ -140,6 +176,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument("path", help="path to the JSONL store file")
     p_verify.add_argument("--pin", default=None, help="compare head against a pin file")
     p_verify.add_argument("--pin-out", default=None, help="write current head hash to a pin file")
+    p_verify.add_argument(
+        "--strict",
+        action="store_true",
+        help="stop at the first broken link and fail loudly (standalone verifier)",
+    )
+    p_verify.add_argument(
+        "--format",
+        default="text",
+        choices=["text", "json"],
+        help="output format: text summary or a JSON report for CI tooling",
+    )
+    p_verify.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="print one ok line per verified event before the summary",
+    )
     p_verify.set_defaults(func=cmd_verify)
 
     p_export = sub.add_parser("export", help="export the store to JSONL, CSV, or a SIEM format")

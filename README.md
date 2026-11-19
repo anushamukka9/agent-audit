@@ -89,6 +89,8 @@ field list is in [docs/event-schema.md](docs/event-schema.md).
 agent-audit init audit.jsonl                        # create an empty store
 agent-audit log audit.jsonl --run-id r --actor u --agent a --action tool.call
 agent-audit verify audit.jsonl                      # re-hash the chain
+agent-audit verify audit.jsonl --strict             # fail at the first broken link
+agent-audit verify audit.jsonl --format json        # machine-readable report for CI
 agent-audit verify audit.jsonl --pin-out head.pin   # pin the head hash
 agent-audit verify audit.jsonl --pin head.pin       # verify against the pin
 agent-audit export audit.jsonl -o out.csv --format csv
@@ -119,6 +121,33 @@ result = store.verify_with_pin("/secure/vault/run-123.pin")
 
 How verification works and why the pin matters:
 [docs/verification.md](docs/verification.md).
+
+## Log verification CLI
+
+The verify command also runs standalone, on any agent-audit log file,
+with no store object involved. That is the mode for a log someone
+hands you: a run artifact out of CI, a file attached to a bug report,
+a log from another host.
+
+```bash
+agent-audit verify audit.jsonl --strict
+# stops at the first broken link, prints it as a FAIL line on
+# stderr, and exits 1; a clean log exits 0
+
+agent-audit verify audit.jsonl --format json --pin head.pin
+# one JSON report: valid, first_failure, every problem with its line
+```
+
+The walk proves no event was altered (hash recomputation), dropped
+(sequence gaps and broken links), reordered (the first swapped event
+carries the wrong sequence and previous hash), or replayed (a repeated
+`event_id`). In Python: `verify_file(path)` for the full report,
+`first_broken_link(path)` for just the first problem. The one thing a
+walk cannot see is a cut tail, which is what the pin is for. Modes,
+exit codes, and a CI gate example:
+[docs/log-verification.md](docs/log-verification.md), and
+[examples/verify_demo.py](examples/verify_demo.py) shows all three
+tamper kinds getting caught.
 
 ## SIEM export
 
@@ -152,6 +181,7 @@ is the default durability setting.
 | Append throughput (1,000 events, single-threaded, fsync) | 49 events/sec |
 | Append throughput (10,000 events, single-threaded, fsync) | 56 events/sec |
 | Full-chain verification (10,000 events) | 31,875 events/sec |
+| Standalone verification, verify_file (10,000 events) | 36,825 events/sec |
 | Average bytes per event | 480 |
 | CSV export (50,000 events) | 1.15 s |
 | SIEM export, Splunk (10,000 events, in-memory) | 45,720 events/sec |
