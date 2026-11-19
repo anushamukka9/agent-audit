@@ -29,3 +29,15 @@ ECS document).
 | SIEM export, Splunk HEC envelopes (10,000 events) | 45,720 events/sec |
 | SIEM export, Elastic ECS bulk NDJSON (10,000 events) | 32,217 events/sec |
 | SIEM export, Datadog log records (10,000 events) | 45,708 events/sec |
+
+
+## Standalone verification (added 2026-11-19)
+
+Measured on the same machine as above, Python 3.12.3, on 2026-11-19.
+Method: `verify_file` over a 10,000-event log written by AuditStore,
+median of 3 runs. The standalone walk re-reads the file from disk, so
+this number includes file I/O, unlike the in-memory SIEM figures.
+
+| Benchmark | Result |
+|---|---|
+| Standalone verification, verify_file (10,000 events) | 36,825 events/sec |

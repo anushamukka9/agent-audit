@@ -62,3 +62,13 @@ Verification is O(n): it reads and re-hashes every entry. For very
 large logs, verify on a schedule (hourly, per run) rather than after
 every append, and keep pins per run so you can verify one run's slice
 without replaying the whole file.
+
+## Verifying a file you did not write
+
+Everything above also runs standalone, on a plain file, with no store
+object: `agent-audit verify <file> --strict` stops at the first broken
+link and fails loudly, `--format json` emits a machine-readable
+report for CI gates, and `verify_file()` / `first_broken_link()` do
+the same from Python. The standalone walk adds one check this page
+does not cover: a repeated `event_id` is flagged as a replayed or
+copied-in entry. Full details: [log-verification.md](log-verification.md).

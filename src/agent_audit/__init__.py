@@ -42,14 +42,16 @@ from .siem import (
     write_grafana_dashboard,
 )
 from .store import AuditStore, VerificationProblem, VerificationResult
+from .verify import ChainReport, first_broken_link, verify_file, verify_lines
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "GENESIS_PREV_HASH",
     "CSV_COLUMNS",
     "SIEM_FORMATS",
     "AuditStore",
+    "ChainReport",
     "Event",
     "VerificationProblem",
     "VerificationResult",
@@ -62,11 +64,14 @@ __all__ = [
     "export_siem",
     "export_splunk",
     "filter_events",
+    "first_broken_link",
     "iter_events",
     "sanitize_parameters",
     "to_datadog_event",
     "to_ecs_event",
     "to_splunk_event",
     "utc_now_iso",
+    "verify_file",
+    "verify_lines",
     "write_grafana_dashboard",
 ]
